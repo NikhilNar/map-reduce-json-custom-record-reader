@@ -67,6 +67,7 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
 
         for(;offset<content.length();offset++){
             Character c= content.charAt(offset);
+            log.info("character offset="+offset+" character="+c);
             if(c=='{'){
                 s.push(c);
                 if(s.size()>1){
