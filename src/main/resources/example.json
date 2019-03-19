@@ -1,0 +1,8 @@
+{
+  "name":"nikhil",
+  "address":"Brooklyn",
+  "college":{
+    "name":"NYU",
+    "address":"Brooklyn"
+  }
+}
