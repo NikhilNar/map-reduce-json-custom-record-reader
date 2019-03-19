@@ -1,6 +1,6 @@
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -14,6 +14,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import java.io.IOException;
+import java.util.*;
 
 public class WordCountV2  extends Configured implements Tool{
 
@@ -43,7 +44,7 @@ public class WordCountV2  extends Configured implements Tool{
         //Initialize the Hadoop job and set the jar as well as the name of the Job
         Job job = new Job();
         job.setJarByClass(WordCountV2.class);
-        job.setJobName("wordcount");
+        job.setJobName("Bigram");
 
         job.setInputFormatClass(JSONInputFormat.class);
         JSONInputFormat.addInputPath(job,new Path(args[0]));
@@ -72,14 +73,30 @@ public class WordCountV2  extends Configured implements Tool{
         return returnValue;
     }
 
-    public static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+    public static class MyMapper extends Mapper<Object, BytesWritable, Text, IntWritable> {
 
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
 
-        public void map(LongWritable key, Text value, Context context
+        private String sanitizeString(String str){
+            String regex="([^\\s\\w]|_)+";
+            return str.replaceAll(regex," ").toLowerCase();
+        }
+
+        public void map(Object key, BytesWritable value, Context context
         ) throws IOException, InterruptedException {
-            context.write(value,one);
+            StringTokenizer itr = new StringTokenizer(sanitizeString(new String(value.copyBytes())));
+
+            if(itr.countTokens()<2)
+                return;
+
+            String token1=itr.nextToken();
+            while (itr.hasMoreTokens()) {
+                String token2=itr.nextToken();
+                Text w = new Text(token1+"+"+token2);
+                context.write(w, one);
+                token1=token2;
+            }
         }
     }
 
