@@ -1,14 +1,20 @@
-import org.apache.hadoop.io.LongWritable;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-
+import java.util.Stack;
+import java.io.FileInputStream;
 import java.io.IOException;
 
-import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-import java.util.Stack;
 
 /*** Custom Hadoop Record Reader : zipped file
  *
@@ -17,108 +23,103 @@ import java.util.Stack;
  *    V = bytes corresponding to the file
  *
  * ***/
- public class JSONRecordReader extends RecordReader<LongWritable, Text> {
-
-    private LineRecordReader reader = new LineRecordReader();
-    private StringBuffer currValue = new StringBuffer();
-    private Stack<Character> stack = new Stack();
-    private String line = new String();
-    private int lineLength = 0;
-    private int position = 0;
-    private long currPos;
-    private  boolean isFinished = false;
+public class JSONRecordReader extends RecordReader<Text, Text> {
+    public static final Log log = LogFactory.getLog(JSONRecordReader.class);
+    private StringBuffer currKey=new StringBuffer();
+    private StringBuffer currValue=new StringBuffer();
+    private StringBuffer prevKey=new StringBuffer();
+    private String content;
+    private Stack<Character> s=new Stack();
+    private Text key,val;
+    private boolean keyParsing=false, valueParsing=false;
+    private int offset=0;
 
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
-       reader.initialize(inputSplit, context);
-       lineLength = 0;
-       line = null;
-       stack = new Stack();
-       isFinished = false;
-       currPos = 0;
+
+        // your code here
+        // the code here depends on what/how you define a split....
+        FileSplit split = (FileSplit) inputSplit;
+        Path path = split.getPath();
+        FileSystem fileSystem = path.getFileSystem(context.getConfiguration());
+        content = fileSystem.open(path).readUTF();
+        log.info("content value======"+content);
     }
 
-    //set the next json object in currValue
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
-        currValue = currValue.delete(0,currValue.length());
-        stack = new Stack();
-        while (true) {
-            if (position >= lineLength) {
-                if (reader.nextKeyValue()) {
-                    line = reader.getCurrentValue() != null ? reader.getCurrentValue().toString() : null;
-                    position = 0;
-                    lineLength = line.length();
-                } else {
-                    line = null;
+        // your code here
+        // the code here depends on what/how you define a split....
+        log.info("offset value===="+offset);
+        for(;offset<content.length();offset++){
+            Character c= content.charAt(offset);
+            if(c=='{'){
+                s.push(c);
+                if(s.size()>1){
+                    prevKey=new StringBuffer(prevKey.toString()+currKey.toString());
+                    prevKey.append('.');
+                    currKey=new StringBuffer();
                 }
             }
-            if (line == null) {
-                isFinished = true;
-                currValue.delete(0,currValue.length());
-                return false;
+            else if(c=='}'){
+                s.pop();
+                int end=prevKey.toString().lastIndexOf(".");
+                if(end>0){
+                    prevKey=new StringBuffer(prevKey.toString().substring(0,end));
+                }
+                else
+                    prevKey=new StringBuffer();
             }
-            Character temp, top;
-            while (position < lineLength) {
-                temp = line.charAt(position);
-                position += 1;
-                currPos += 1;
-                if (Character.isWhitespace(temp))
-                    continue;
-                currValue.append(temp);
-                if (stack.empty() && !(temp == '{' || temp == '[')) {
-                    return false;
-                }
-                if (temp == '{' || temp == '[') {
-                    stack.push(temp);
-                } else {
-                    if (temp == ']') {
-                        top = stack.peek();
-                        if (top == '[') {
-                            stack.pop();
-                            if (stack.empty()) {
-                                return true;
-                            }
-                        } else {
-                            currValue.delete(0, currValue.length());
-                            return false;
-                        }
-                    }
-                    if (temp == '}') {
-                        top = stack.peek();
-                        if (top == '{') {
-                            stack.pop();
-                            if (stack.empty()) {
-                                return true;
-                            }
-                        } else {
-                            currValue.delete(0, currValue.length());
-                            return false;
-                        }
-                    }
-                }
+            else if(c=='\"' && currKey.length()==0 && !keyParsing)
+                keyParsing=true;
+            else if(c!='\"' && keyParsing && currValue.length()==0)
+                currKey.append(c);
+            else if(c=='\"' && currKey.length()!=0 && keyParsing && currValue.length()==0)
+                keyParsing=false;
+            else if(c=='\"' && !keyParsing && !valueParsing && currKey.length()!=0 && currValue.length()==0)
+                valueParsing=true;
+            else if(c!='\"' && !keyParsing && valueParsing && currKey.length()!=0)
+                currValue.append(c);
+            else if(c=='\"'&& !keyParsing && valueParsing && currKey.length()!=0 && currValue.length()!=0)
+                valueParsing=false;
+
+            if(!keyParsing && !valueParsing && currKey.length()!=0 && currValue.length()!=0){
+                log.info("key ="+prevKey.toString()+currKey.toString()+" value ="+currValue.toString());
+                key=new Text(prevKey.toString()+currKey.toString());
+                val=new Text(prevKey.toString()+currKey.toString());
+                currKey=new StringBuffer();
+                currValue=new StringBuffer();
+                return true;
             }
         }
+
+        return false;
     }
 
     @Override
-    public LongWritable getCurrentKey() throws IOException, InterruptedException {
-        return reader.getCurrentKey(); //new LongWritable(currPos - currValue.length());
+    public Text getCurrentKey() throws IOException, InterruptedException {
+        // your code here
+        // the code here depends on what/how you define a split....
+        return key;
     }
 
-   @Override
-   public Text getCurrentValue() throws IOException,
-           InterruptedException {
-      return new Text(currValue.toString());
-   }
-
-   @Override
-   public float getProgress()
-           throws IOException, InterruptedException {
-      return reader.getProgress();
-   }
     @Override
-    public synchronized void close() throws IOException {
-        reader.close();
+    public Text getCurrentValue() throws IOException, InterruptedException {
+        // your code here
+        // the code here depends on what/how you define a split....
+        return val;
+    }
+
+    @Override
+    public float getProgress() throws IOException, InterruptedException {
+        // let's ignore this one for now
+        return offset>=content.length() ? 1.0f : 0.0f;
+    }
+
+    @Override
+    public void close() throws IOException {
+        // your code here
+        // the code here depends on what/how you define a split....
+
     }
 }

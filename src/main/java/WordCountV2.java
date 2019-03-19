@@ -67,12 +67,12 @@ public class WordCountV2 extends Configured implements Tool{
         return returnValue;
     }
 
-    public static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+    public static class MyMapper extends Mapper<Text, Text, Text, IntWritable> {
 
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
 
-        public void map(LongWritable key, Text value, Context context
+        public void map(Text key, Text value, Context context
         ) throws IOException, InterruptedException {
             context.write(value,one);
         }

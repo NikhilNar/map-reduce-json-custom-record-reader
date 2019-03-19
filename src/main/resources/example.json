@@ -3,6 +3,10 @@
   "address":"Brooklyn",
   "college":{
     "name":"NYU",
-    "address":"Brooklyn"
+    "address":"Brooklyn",
+    "departments":{
+      "name":"Computer Science",
+      "HOD":"Prof. Leung"
+    }
   }
 }
