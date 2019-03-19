@@ -44,7 +44,12 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
         log.info("path================================="+path.toString());
         FileSystem fileSystem = path.getFileSystem(context.getConfiguration());
         log.info("filesystem=================="+fileSystem);
-        content = fileSystem.open(path).readUTF();
+        FSDataInputStream fsdis = fileSystem.open(path);
+        log.info("FSDataInputStream============"+fsdis);
+        byte[] bs = new byte[fsdis.available()];
+        log.info("bs================"+bs);
+        fsdis.read(bs);
+        content=new String(bs);
         log.info("content value======"+content);
     }
 
