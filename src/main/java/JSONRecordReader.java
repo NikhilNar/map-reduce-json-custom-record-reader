@@ -62,6 +62,8 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
         log.info("currValue==========="+currValue.toString());
         log.info("prevKey============="+prevKey.toString());
         log.info("stack value==========="+s);
+        log.info("keyParsing==========="+keyParsing);
+        log.info("valueParsing==============="+valueParsing);
 
         for(;offset<content.length();offset++){
             Character c= content.charAt(offset);
