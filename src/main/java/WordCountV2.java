@@ -77,6 +77,7 @@ public class WordCountV2 extends Configured implements Tool{
         public void map(Text key, Text value, Context context
         ) throws IOException, InterruptedException {
             log.info("In Mapper ==================================================================================");
+            log.info("key=========================="+key);
             log.info("value=============="+value);
             context.write(value,one);
         }
