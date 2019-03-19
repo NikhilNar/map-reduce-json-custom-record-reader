@@ -41,7 +41,9 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
         // the code here depends on what/how you define a split....
         FileSplit split = (FileSplit) inputSplit;
         Path path = split.getPath();
+        log.info("path================================="+path.toString());
         FileSystem fileSystem = path.getFileSystem(context.getConfiguration());
+        log.info("filesystem=================="+fileSystem);
         content = fileSystem.open(path).readUTF();
         log.info("content value======"+content);
     }
