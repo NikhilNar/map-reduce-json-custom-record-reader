@@ -1,3 +1,5 @@
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -15,7 +17,7 @@ import org.apache.hadoop.util.ToolRunner;
 import java.io.IOException;
 
 public class WordCountV2 extends Configured implements Tool{
-
+    public static final Log log = LogFactory.getLog(JSONRecordReader.class);
     /**
      * Main function which calls the run method and passes the args using ToolRunner
      * @param args Two arguments input and output file paths
@@ -74,6 +76,8 @@ public class WordCountV2 extends Configured implements Tool{
 
         public void map(Text key, Text value, Context context
         ) throws IOException, InterruptedException {
+            log.info("In Mapper ==================================================================================");
+            log.info("value=============="+value);
             context.write(value,one);
         }
     }
@@ -85,11 +89,14 @@ public class WordCountV2 extends Configured implements Tool{
         public void reduce(Text key, Iterable<IntWritable> values,
                            Context context
         ) throws IOException, InterruptedException {
+            log.info("In Reducer=====================================================================================");
             int sum = 0;
             for (IntWritable val : values) {
                 sum += val.get();
             }
+
             result.set(sum);
+            log.info("key============="+key+" result====================="+result);
             context.write(key, result);
         }
     }
