@@ -58,6 +58,11 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
         // your code here
         // the code here depends on what/how you define a split....
         log.info("offset value===="+offset);
+        log.info("currKey==========="+currKey.toString());
+        log.info("currValue==========="+currValue.toString());
+        log.info("prevKey============="+prevKey.toString());
+        log.info("stack value==========="+s);
+
         for(;offset<content.length();offset++){
             Character c= content.charAt(offset);
             if(c=='{'){
