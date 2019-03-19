@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  * ZIP files are not 'splittable', so we need to process/decompress in place:
  * each ZIP file will be processed by a single Mapper; we are parallelizing files, not lines...
  */
-public class JSONInputFormat extends FileInputFormat<LongWritable, Text> {
+public class JSONInputFormat extends FileInputFormat<Text, Text> {
 
     @Override
     protected boolean isSplitable( JobContext context, Path filename )
@@ -27,7 +27,7 @@ public class JSONInputFormat extends FileInputFormat<LongWritable, Text> {
      * @throws InterruptedException
      */
     @Override
-    public RecordReader<LongWritable, Text> createRecordReader(InputSplit split, TaskAttemptContext context)
+    public RecordReader<Text, Text> createRecordReader(InputSplit split, TaskAttemptContext context)
             throws IOException, InterruptedException {
         // no need to modify this one....
         return new JSONRecordReader();
