@@ -101,7 +101,7 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
             if(!keyParsing && !valueParsing && currKey.length()!=0 && currValue.length()!=0){
                 log.info("key ="+prevKey.toString()+currKey.toString()+" value ="+currValue.toString());
                 key=new Text(prevKey.toString()+currKey.toString());
-                val=new Text(prevKey.toString()+currKey.toString());
+                val=new Text(currValue.toString());
                 currKey=new StringBuffer();
                 currValue=new StringBuffer();
                 offset++;
