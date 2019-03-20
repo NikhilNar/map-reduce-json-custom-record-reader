@@ -1,0 +1,15 @@
+{
+  "name":"nikhil",
+  "address":"Brooklyn",
+  "college":{
+    "name":"NYU",
+    "address":"Brooklyn",
+    "departments":{
+      "name":"Computer Science",
+      "HOD":"Prof. Leung",
+      "address":{
+        "location":"Brooklyn"
+      }
+    }
+  }
+}
