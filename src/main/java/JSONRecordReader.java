@@ -1,15 +1,10 @@
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import java.util.Stack;
-import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -24,7 +19,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  *
  * ***/
 public class JSONRecordReader extends RecordReader<Text, Text> {
-    public static final Log log = LogFactory.getLog(JSONRecordReader.class);
     private StringBuffer currKey=new StringBuffer();
     private StringBuffer currValue=new StringBuffer();
     private StringBuffer prevKey=new StringBuffer();
@@ -33,6 +27,8 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
     private Text key,val;
     private boolean keyParsing=false, valueParsing=false;
     private int offset=0;
+    private FSDataInputStream fsdis;
+    private FileSystem fis;
 
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -41,33 +37,19 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
         // the code here depends on what/how you define a split....
         FileSplit split = (FileSplit) inputSplit;
         Path path = split.getPath();
-        log.info("path================================="+path.toString());
-        FileSystem fileSystem = path.getFileSystem(context.getConfiguration());
-        log.info("filesystem=================="+fileSystem);
-        FSDataInputStream fsdis = fileSystem.open(path);
-        log.info("FSDataInputStream============"+fsdis);
+        fis = path.getFileSystem(context.getConfiguration());
+        fsdis = fis.open(path);
         byte[] bs = new byte[fsdis.available()];
-        log.info("bs================"+bs);
         fsdis.read(bs);
         content=new String(bs);
-        log.info("content value======"+content);
     }
 
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         // your code here
         // the code here depends on what/how you define a split....
-        log.info("offset value===="+offset);
-        log.info("currKey==========="+currKey.toString());
-        log.info("currValue==========="+currValue.toString());
-        log.info("prevKey============="+prevKey.toString());
-        log.info("stack value==========="+s);
-        log.info("keyParsing==========="+keyParsing);
-        log.info("valueParsing==============="+valueParsing);
-
         for(;offset<content.length();offset++){
             Character c= content.charAt(offset);
-            log.info("character offset="+offset+" character="+c);
             if(c=='{'){
                 s.push(c);
                 if(s.size()>1){
@@ -99,7 +81,6 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
                 valueParsing=false;
 
             if(!keyParsing && !valueParsing && currKey.length()!=0 && currValue.length()!=0){
-                log.info("key ="+prevKey.toString()+currKey.toString()+" value ="+currValue.toString());
                 key=new Text(prevKey.toString()+currKey.toString());
                 val=new Text(currValue.toString());
                 currKey=new StringBuffer();
@@ -136,6 +117,11 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
     public void close() throws IOException {
         // your code here
         // the code here depends on what/how you define a split....
-
+        try {
+            fsdis.close();
+            fis.close();
+        } catch (Exception e) {
+            System.out.println("Not able to close the streams");
+        }
     }
 }
