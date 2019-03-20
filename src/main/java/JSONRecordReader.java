@@ -48,6 +48,29 @@ public class JSONRecordReader extends RecordReader<Text, Text> {
     public boolean nextKeyValue() throws IOException, InterruptedException {
         // your code here
         // the code here depends on what/how you define a split....
+        /*
+            The code will parse multi level json
+            So if  my json is
+                    {
+                      "name":"nikhil",
+                      "address":"Brooklyn",
+                      "college":{
+                        "name":"NYU",
+                        "address":"Brooklyn",
+                        "departments":{
+                          "name":"Computer Science",
+                          "HOD":"Prof. Leung",
+                          "address":{
+                            "location":"Brooklyn"
+                          }
+                        }
+                      }
+                    }
+             Then the input to the mapper will be
+             key="name" and value="nikhil"
+             key="college.name" and value="NYU"
+             key="college.departments.address" and value="Brooklyn"
+         */
         for(;offset<content.length();offset++){
             Character c= content.charAt(offset);
             if(c=='{'){
